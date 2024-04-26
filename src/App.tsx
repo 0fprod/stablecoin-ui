@@ -15,6 +15,7 @@ function App() {
       <HeroApp />
       <Prices />
       <Stats />
+      <Balances />
     </main>
   );
 }
