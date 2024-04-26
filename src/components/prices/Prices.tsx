@@ -40,7 +40,7 @@ export const Prices: React.FC = () => {
             width={width}
             horizontalLine
             isCurrentPlan
-            price={<PriceDisplay isLoading={isLoading} value={linkPrice} />}
+            price={<PriceDisplay isLoading={isLoading} value={linkPrice} key="link" />}
             themeColor="rgba(103, 58, 194, 0.6)"
             title="Link"
           />
@@ -63,7 +63,7 @@ export const Prices: React.FC = () => {
             width={width}
             horizontalLine
             isCurrentPlan
-            price={<PriceDisplay isLoading={isLoading} value={ethPrice} />}
+            price={<PriceDisplay isLoading={isLoading} value={ethPrice} key="eth" />}
             themeColor="rgba(103, 58, 194, 0.6)"
             title="wETH"
           />
