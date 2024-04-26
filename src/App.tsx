@@ -12,6 +12,7 @@ function App() {
     <main>
       <Github />
       <Nav />
+      <HeroApp />
     </main>
   );
 }

@@ -1,0 +1,10 @@
+.hero-wrapper {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+.hero-wrapper section {
+  width: 100%;
+}
