@@ -13,6 +13,7 @@ function App() {
       <Github />
       <Nav />
       <HeroApp />
+      <Prices />
     </main>
   );
 }
