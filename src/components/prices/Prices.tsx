@@ -4,27 +4,6 @@ import { usePrices } from '../../hooks/usePrices';
 import { formatUnits } from 'viem';
 import { useEffect } from 'react';
 
-interface PriceDisplayProps {
-  isLoading: boolean;
-  value: bigint;
-}
-
-const PriceDisplay: React.FC<PriceDisplayProps> = ({ isLoading, value }) => {
-  if (isLoading) {
-    return (
-      <div style={{ margin: 'auto' }}>
-        <Loading size={12} spinnerColor="cornflowerblue" spinnerType="wave" />
-      </div>
-    );
-  }
-
-  return (
-    <Typography color="white" variant="h1" weight="700">
-      {formatWithDecimals(value)} $
-    </Typography>
-  );
-};
-
 export const Prices: React.FC = () => {
   const { linkPrice, ethPrice, updatePrices, isLoading } = usePrices();
   const width = '290px';
@@ -91,6 +70,27 @@ export const Prices: React.FC = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+interface PriceDisplayProps {
+  isLoading: boolean;
+  value: bigint;
+}
+
+const PriceDisplay: React.FC<PriceDisplayProps> = ({ isLoading, value }) => {
+  if (isLoading) {
+    return (
+      <div style={{ margin: 'auto' }}>
+        <Loading size={12} spinnerColor="cornflowerblue" spinnerType="wave" />
+      </div>
+    );
+  }
+
+  return (
+    <Typography color="white" variant="h1" weight="700">
+      {formatWithDecimals(value)} $
+    </Typography>
   );
 };
 
