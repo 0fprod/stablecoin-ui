@@ -14,6 +14,7 @@ function App() {
       <Nav />
       <HeroApp />
       <Prices />
+      <Stats />
     </main>
   );
 }

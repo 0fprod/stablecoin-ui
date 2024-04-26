@@ -1,0 +1,14 @@
+.stats {
+  display: flex;
+  flex-direction: row;
+  gap: 2rem;
+  flex-wrap: wrap;
+  width: 100%;
+  justify-content: center;
+}
+
+.stats .group span {
+  font-weight: 900;
+  font-size: medium;
+  color: blueviolet;
+}
