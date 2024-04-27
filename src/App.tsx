@@ -16,6 +16,7 @@ function App() {
       <Prices />
       <Stats />
       <Balances />
+      <Collateralized />
     </main>
   );
 }
