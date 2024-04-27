@@ -12,6 +12,6 @@
   margin: 0 auto;
 }
 
-.prices .faucet > a {
+.prices .faucet > a:first-child {
   text-align: center;
 }
