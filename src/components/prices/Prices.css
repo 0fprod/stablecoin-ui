@@ -4,18 +4,14 @@
   flex-direction: row;
   gap: 2rem;
 }
-.prices .PlanCard {
-  background: linear-gradient(
-      113.54deg,
-      rgba(103, 58, 194, 0.6) 14.91%,
-      rgba(122, 74, 221, 0.498) 25.92%,
-      rgba(209, 103, 255, 0.03) 55.76%
-    ),
-    linear-gradient(160.75deg, rgb(122, 74, 221) 41.37%, rgb(213, 123, 255) 98.29%) !important;
-  color: white;
+
+.prices .faucet {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 auto;
 }
 
-.prices .PlanCard h2 {
-  color: white !important;
-  font-weight: bolder;
+.prices .faucet > a {
+  text-align: center;
 }
