@@ -1,32 +1,72 @@
 import './Balances.css';
-import { formatUnits, parseEther } from 'viem';
+import { Hex, formatUnits, parseEther } from 'viem';
 import React, { useEffect, useState } from 'react';
 import { useAccount } from 'wagmi';
-import { Key, LogOut, Wallet, LockClosed, Bin, Archive, Holders } from '@web3uikit/icons';
-import { Button, Input, Loading, Tooltip } from '@web3uikit/core';
+import { Key, LogOut, Wallet, LockClosed, Bin, Archive, Holders, AlertCircle } from '@web3uikit/icons';
+import { Button, Input, Loading, Tooltip, useNotification } from '@web3uikit/core';
 import { useWalletBalances } from '../../hooks/useWalletBalances';
 import { useCollateralBalances } from '../../hooks/useCollateralBalances';
 import { useDscEngine } from '../../hooks/useDscEngine';
 import { linkTokenAddress, wEthTokenAddress } from '../../constants/addresses';
 import { Token } from '../../constants/symbols';
+import { getDetails } from '../../utils/error.handler';
+import { TxHashLink } from '../tx-link/TxHashLink';
+import { useStats } from '../../hooks/useStats';
 
 export const Balances: React.FC = () => {
-  const { address } = useAccount();
   const [linkAmount, setLinkAmount] = useState<bigint>(0n);
   const [wEthAmount, setWEthAmount] = useState<bigint>(0n);
   const [dscAmount, setDscAmount] = useState<bigint>(0n);
-  const { approveToken, depositCollateral, redeemCollateral, mintDsc, burnDsc } = useDscEngine();
-  const { dscBalance, linkBalance, wEthBalance, isLoadingWalletBalances } = useWalletBalances(address);
-  const { linkCollateralBalance, wEthCollateralBalance, isLoadingCollaterals } = useCollateralBalances(address);
+  const [maxMintableDsc, setMaxMintableDsc] = useState<bigint>(0n);
   const [isActionRunning, setIsActionRunning] = useState<boolean>(false);
+  const dispatch = useNotification();
+  const { address } = useAccount();
+  const { approveToken, depositCollateral, redeemCollateral, mintDsc, burnDsc, getMaxMintableDsc } = useDscEngine();
+  const { dscBalance, linkBalance, wEthBalance, isLoadingWalletBalances, updateWalletBalances } =
+    useWalletBalances(address);
+  const { linkCollateralBalance, wEthCollateralBalance, isLoadingCollaterals, updateCollateralBalances } =
+    useCollateralBalances(address);
+  const { fetchStats } = useStats(address);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const showErrorNotification = (e: any) => {
+    console.error('Error -->', e);
+    dispatch({
+      type: 'error',
+      message: getDetails(e.message),
+      title: 'Error!',
+      icon: <AlertCircle fontSize={20} />,
+      position: 'topR',
+    });
+  };
+
+  const showSuccessNotification = (txHash: Hex) => {
+    dispatch({
+      type: 'info',
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-expect-error
+      message: TxHashLink({ txHash }),
+      title: 'Error!',
+      icon: <AlertCircle fontSize={20} />,
+      position: 'topR',
+    });
+  };
+
+  const updateBalances = () => {
+    updateWalletBalances();
+    updateCollateralBalances();
+    fetchStats();
+  };
 
   const onApprove = async (token: Token) => {
     if (!address) return;
     setIsActionRunning(true);
     const tokenAddress = token === Token.Link ? linkTokenAddress : wEthTokenAddress;
     const amount = token === Token.Link ? linkAmount : wEthAmount;
-    await approveToken(tokenAddress, address, amount);
-    setIsActionRunning(false);
+    approveToken(tokenAddress, address, amount)
+      .then(showSuccessNotification)
+      .catch(showErrorNotification)
+      .finally(() => setIsActionRunning(false));
   };
 
   const onDeposit = async (token: Token) => {
@@ -34,7 +74,10 @@ export const Balances: React.FC = () => {
     setIsActionRunning(true);
     const tokenAddress = token === Token.Link ? linkTokenAddress : wEthTokenAddress;
     const amount = token === Token.Link ? linkAmount : wEthAmount;
-    depositCollateral(tokenAddress, address, amount).finally(() => setIsActionRunning(false));
+    depositCollateral(tokenAddress, address, amount)
+      .then(updateBalances)
+      .catch(showErrorNotification)
+      .finally(() => setIsActionRunning(false));
   };
 
   const onRedeem = async (token: Token) => {
@@ -42,19 +85,28 @@ export const Balances: React.FC = () => {
     setIsActionRunning(true);
     const tokenAddress = token === Token.Link ? linkTokenAddress : wEthTokenAddress;
     const amount = token === Token.Link ? linkAmount : wEthAmount;
-    redeemCollateral(tokenAddress, address, amount).finally(() => setIsActionRunning(false));
+    redeemCollateral(tokenAddress, address, amount)
+      .then(updateBalances)
+      .catch(showErrorNotification)
+      .finally(() => setIsActionRunning(false));
   };
 
   const onMint = async () => {
     if (!address) return;
     setIsActionRunning(true);
-    mintDsc(address, dscAmount).finally(() => setIsActionRunning(false));
+    mintDsc(address, dscAmount)
+      .then(updateBalances)
+      .catch(showErrorNotification)
+      .finally(() => setIsActionRunning(false));
   };
 
   const onBurn = async () => {
     if (!address) return;
     setIsActionRunning(true);
-    burnDsc(address, dscAmount).finally(() => setIsActionRunning(false));
+    burnDsc(address, dscAmount)
+      .then(updateBalances)
+      .catch(showErrorNotification)
+      .finally(() => setIsActionRunning(false));
   };
 
   const onChange = (token: Token, value: string) => {
@@ -62,6 +114,16 @@ export const Balances: React.FC = () => {
     if (token === Token.Link) setLinkAmount(parseEther(value));
     if (token === Token.wETH) setWEthAmount(parseEther(value));
     if (token === Token.DSC) setDscAmount(parseEther(value));
+  };
+
+  const setMaxMintableDscAmount = () => {
+    if (!address) return;
+    getMaxMintableDsc(address)
+      .then((amount) => {
+        const formattedAmount = formatUnits(amount - dscBalance, 18);
+        setMaxMintableDsc(BigInt(formattedAmount));
+      })
+      .catch(showErrorNotification);
   };
 
   useEffect(() => {
@@ -103,9 +165,20 @@ export const Balances: React.FC = () => {
             <Wallet fontSize="18px" color="green" /> {isLoadingWalletBalances ? <Loading /> : walletText}
           </Tooltip>
           <div className="center">
-            <Input type="number" onChange={(e) => onChange(Token.DSC, e.target.value)} />
+            <Input
+              type="number"
+              onChange={(e) => onChange(Token.DSC, e.target.value)}
+              value={maxMintableDsc.toString()}
+            />
           </div>
           <div className="actions">
+            <Button
+              icon={<Key fontSize="1rem" />}
+              text="Set max dsc"
+              theme="secondary"
+              onClick={setMaxMintableDscAmount}
+              disabled={isActionRunning}
+            />
             <Button
               icon={<Holders fontSize="1rem" />}
               text="Mint"
