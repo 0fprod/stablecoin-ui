@@ -3,10 +3,16 @@ import { Illustration, Widget } from '@web3uikit/core';
 import { useStats } from '../../hooks/useStats';
 import { useAccount } from 'wagmi';
 import { useEffect } from 'react';
+import { formatUnits } from 'viem';
 
 export const Stats = () => {
   const { address } = useAccount();
   const { circulatingSupply, holders, healthFactor, isLoading, fetchStats } = useStats(address);
+
+  const formatHealthFactor = (factor: bigint) => {
+    const formatted = (Number(factor) / 10 ** 18).toFixed(2) + ' %';
+    return formatted;
+  };
 
   useEffect(() => {
     if (address) {
@@ -28,12 +34,12 @@ export const Stats = () => {
       <div className="stats">
         {address && (
           <div className="group">
-            <Widget info={healthFactor.toString()} title="Your Health Factor" isLoading={isLoading} />
+            <Widget info={formatHealthFactor(healthFactor)} title="Your Health Factor" isLoading={isLoading} />
             <Illustration logo="confirmed" width="180" height="180px" />
           </div>
         )}
         <div className="group">
-          <Widget info={circulatingSupply.toString()} title="Circulating supply" isLoading={isLoading} />
+          <Widget info={formatUnits(circulatingSupply, 18)} title="Circulating supply" isLoading={isLoading} />
           <Illustration logo="token" width="180" height="180px" />
         </div>
         <div className="group">
