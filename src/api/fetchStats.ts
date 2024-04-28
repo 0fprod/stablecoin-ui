@@ -1,13 +1,13 @@
 import { Hex, createPublicClient, http } from 'viem';
 import { dscoinabi } from '../constants/dscoin.abi';
 import { dscoinAddress as address, dscEngineAddress } from "../constants/addresses";
-import { sepolia } from 'viem/chains';
+import { anvil } from 'viem/chains';
 import { dscEngineABI } from '../constants/dscengine.abi';
 
 
 export const fetchCirculatingSupply = async (): Promise<bigint> => {
   const publicClient = createPublicClient({
-    chain: sepolia,
+    chain: anvil,
     transport: http(import.meta.env.VITE_RPC_URL)
   })
 
@@ -22,7 +22,7 @@ export const fetchCirculatingSupply = async (): Promise<bigint> => {
 
 export const fetchHolders = async (): Promise<bigint> => {
   const publicClient = createPublicClient({
-    chain: sepolia,
+    chain: anvil,
     transport: http(import.meta.env.VITE_RPC_URL)
   })
 
@@ -37,7 +37,7 @@ export const fetchHolders = async (): Promise<bigint> => {
 
 export const fetchHealthFactor = async (account: Hex): Promise<bigint> => {
   const publicClient = createPublicClient({
-    chain: sepolia,
+    chain: anvil,
     transport: http(import.meta.env.VITE_RPC_URL)
   })
 

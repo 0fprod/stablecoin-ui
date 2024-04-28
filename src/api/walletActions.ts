@@ -1,12 +1,12 @@
-import { Hex, createPublicClient, createWalletClient, custom, http } from "viem"
-import { sepolia } from "viem/chains"
+import { Hex, createPublicClient, createWalletClient, custom, http, publicActions } from "viem"
+import { anvil } from "viem/chains"
 import { erc20Abi } from "../constants/erc20.abi"
 import { dscEngineABI } from "../constants/dscengine.abi"
 import { dscEngineAddress } from "../constants/addresses"
 
 export const fetchTokenBalance = async (tokenAddress: Hex, account: Hex) => {
   const publicClient = createPublicClient({
-    chain: sepolia,
+    chain: anvil,
     transport: http(import.meta.env.VITE_RPC_URL)
   })
 
@@ -22,10 +22,24 @@ export const fetchTokenBalance = async (tokenAddress: Hex, account: Hex) => {
 
 export const approveToken = async (tokenAddress: Hex, account: Hex, amount: bigint) => {
   const publicWallet = createWalletClient({
-    chain: sepolia,
+    chain: anvil,
     transport: custom(window.ethereum),
     account,
+  }).extend(publicActions);
+
+
+
+  const { result, request } = await publicWallet.simulateContract({
+    address: tokenAddress,
+    abi: erc20Abi,
+    functionName: 'approve',
+    args: [dscEngineAddress, amount]
   })
+  console.log("### ~ result:", tokenAddress);
+
+  if (!result) {
+    throw new Error(JSON.stringify(request))
+  }
 
   const data = await publicWallet.writeContract({
     address: tokenAddress,
@@ -39,10 +53,23 @@ export const approveToken = async (tokenAddress: Hex, account: Hex, amount: bigi
 
 export const depositCollateral = async (tokenAddress: Hex, account: Hex, amount: bigint) => {
   const publicWallet = createWalletClient({
-    chain: sepolia,
+    chain: anvil,
     transport: custom(window.ethereum),
     account
+  }).extend(publicActions);
+
+
+
+  const { result, request } = await publicWallet.simulateContract({
+    address: tokenAddress,
+    abi: erc20Abi,
+    functionName: 'approve',
+    args: [dscEngineAddress, amount]
   })
+
+  if (!result) {
+    throw new Error(JSON.stringify(request))
+  }
 
   const data = await publicWallet.writeContract({
     account,
@@ -57,7 +84,7 @@ export const depositCollateral = async (tokenAddress: Hex, account: Hex, amount:
 
 export const redeemCollateral = async (tokenAddress: Hex, account: Hex, amount: bigint) => {
   const publicWallet = createWalletClient({
-    chain: sepolia,
+    chain: anvil,
     transport: custom(window.ethereum),
     account
   })
@@ -74,7 +101,7 @@ export const redeemCollateral = async (tokenAddress: Hex, account: Hex, amount: 
 
 export const mintDsc = async (account: Hex, amount: bigint) => {
   const publicWallet = createWalletClient({
-    chain: sepolia,
+    chain: anvil,
     transport: custom(window.ethereum),
     account
   })
@@ -91,7 +118,7 @@ export const mintDsc = async (account: Hex, amount: bigint) => {
 
 export const burnDsc = async (account: Hex, amount: bigint) => {
   const publicWallet = createWalletClient({
-    chain: sepolia,
+    chain: anvil,
     transport: custom(window.ethereum),
     account
   })
@@ -104,4 +131,21 @@ export const burnDsc = async (account: Hex, amount: bigint) => {
   })
 
   return data
+}
+
+export const getMaxMintableDsc = async (account: Hex) => {
+  const publicWallet = createWalletClient({
+    chain: anvil,
+    transport: custom(window.ethereum),
+    account
+  }).extend(publicActions);
+
+  const data = await publicWallet.readContract({
+    address: dscEngineAddress,
+    abi: dscEngineABI,
+    functionName: 'getCollateralUSDValue',
+    args: [account]
+  })
+
+  return data / 2n
 }

@@ -2,11 +2,11 @@ import { dscEngineABI } from '../constants/dscengine.abi';
 import { dscEngineAddress } from '../constants/addresses';
 
 import { Hex, createPublicClient, http } from 'viem';
-import { sepolia } from 'viem/chains';
+import { anvil } from 'viem/chains';
 
 export const fetchCollateralizedTokenBalance = async (tokenAddress: Hex, account: Hex) => {
   const publicClient = createPublicClient({
-    chain: sepolia,
+    chain: anvil,
     transport: http(import.meta.env.VITE_RPC_URL)
   });
 

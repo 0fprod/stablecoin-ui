@@ -2,11 +2,11 @@ import { priceFeedAbi } from '../constants/pricefeed.abi';
 import { linkUsdPriceFeedAddress, wEthUsdPriceFeedAddress } from '../constants/addresses';
 
 import { createPublicClient, http } from 'viem';
-import { sepolia } from 'viem/chains';
+import { anvil } from 'viem/chains';
 
 export const fetchPrices = async () => {
   const publicClient = createPublicClient({
-    chain: sepolia,
+    chain: anvil,
     transport: http(import.meta.env.VITE_RPC_URL)
   });
 

@@ -5,16 +5,17 @@ import './index.css';
 import '@rainbow-me/rainbowkit/styles.css';
 import { getDefaultConfig, RainbowKitProvider } from '@rainbow-me/rainbowkit';
 import { WagmiProvider } from 'wagmi';
-import { sepolia } from 'wagmi/chains';
+import { sepolia, anvil } from 'wagmi/chains';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { rainbowWallet, coinbaseWallet, metaMaskWallet, trustWallet } from '@rainbow-me/rainbowkit/wallets';
+import { NotificationProvider } from '@web3uikit/core';
 
 const queryClient = new QueryClient();
 
 const config = getDefaultConfig({
   appName: 'My RainbowKit App',
   projectId: 'YOUR_PROJECT_ID',
-  chains: [sepolia],
+  chains: [anvil, sepolia],
   ssr: false,
   wallets: [
     {
@@ -29,7 +30,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider modalSize="compact">
-          <App />
+          <NotificationProvider>
+            <App />
+          </NotificationProvider>
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
