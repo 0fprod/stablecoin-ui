@@ -23,8 +23,6 @@ export const useWalletBalances = (account?: Hex) => {
   }, [account])
 
   useEffect(() => {
-
-
     updateWalletBalances();
   }, [updateWalletBalances]);
 

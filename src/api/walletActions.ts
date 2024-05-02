@@ -1,77 +1,50 @@
-import { Hex, createPublicClient, createWalletClient, custom, http, publicActions } from "viem"
+import { Hex, createWalletClient, custom, parseAbiItem, publicActions, zeroAddress } from "viem"
 import { anvil } from "viem/chains"
 import { erc20Abi } from "../constants/erc20.abi"
 import { dscEngineABI } from "../constants/dscengine.abi"
-import { dscEngineAddress } from "../constants/addresses"
+import { dscEngineAddress, dscoinAddress } from "../constants/addresses"
+
+function getPublicClient(account: Hex) {
+  return createWalletClient({
+    chain: anvil,
+    transport: custom(window.ethereum),
+    account
+  }).extend(publicActions);
+}
+
 
 export const fetchTokenBalance = async (tokenAddress: Hex, account: Hex) => {
-  const publicClient = createPublicClient({
-    chain: anvil,
-    transport: http(import.meta.env.VITE_RPC_URL)
-  })
+  const client = getPublicClient(account);
 
-  const data = await publicClient.readContract({
+  const data = await client.readContract({
     address: tokenAddress,
     abi: erc20Abi,
     functionName: 'balanceOf',
     args: [account]
   })
 
+
   return data as bigint
 }
 
-export const approveToken = async (tokenAddress: Hex, account: Hex, amount: bigint) => {
-  const publicWallet = createWalletClient({
-    chain: anvil,
-    transport: custom(window.ethereum),
-    account,
-  }).extend(publicActions);
-
-
-
-  const { result, request } = await publicWallet.simulateContract({
-    address: tokenAddress,
-    abi: erc20Abi,
-    functionName: 'approve',
-    args: [dscEngineAddress, amount]
-  })
-  console.log("### ~ result:", tokenAddress);
-
-  if (!result) {
-    throw new Error(JSON.stringify(request))
-  }
-
-  const data = await publicWallet.writeContract({
+const approveToken = async (tokenAddress: Hex, account: Hex, amount: bigint) => {
+  const client = getPublicClient(account);
+  const { request } = await client.simulateContract({
     address: tokenAddress,
     abi: erc20Abi,
     functionName: 'approve',
     args: [dscEngineAddress, amount]
   })
 
-  return data
+  const txHash = await client.writeContract(request)
+
+  return txHash
 }
 
-export const depositCollateral = async (tokenAddress: Hex, account: Hex, amount: bigint) => {
-  const publicWallet = createWalletClient({
-    chain: anvil,
-    transport: custom(window.ethereum),
-    account
-  }).extend(publicActions);
+const depositCollateral = async (tokenAddress: Hex, account: Hex, amount: bigint) => {
+  const client = getPublicClient(account);
 
-
-
-  const { result, request } = await publicWallet.simulateContract({
-    address: tokenAddress,
-    abi: erc20Abi,
-    functionName: 'approve',
-    args: [dscEngineAddress, amount]
-  })
-
-  if (!result) {
-    throw new Error(JSON.stringify(request))
-  }
-
-  const data = await publicWallet.writeContract({
+  const { request } = await client.simulateContract({
     account,
     address: dscEngineAddress,
     abi: dscEngineABI,
@@ -79,68 +52,110 @@ export const depositCollateral = async (tokenAddress: Hex, account: Hex, amount:
     args: [tokenAddress, amount]
   })
 
-  return data
+  const txHash = await client.writeContract(request)
+  return txHash
+}
+
+export const aproveAndDepositCollateral = async (tokenAddress: Hex, account: Hex, amount: bigint) => {
+  const client = getPublicClient(account);
+  const txHash = await approveToken(tokenAddress, account, amount);
+
+  await client.waitForTransactionReceipt({
+    hash: txHash
+  })
+
+  return depositCollateral(tokenAddress, account, amount)
 }
 
 export const redeemCollateral = async (tokenAddress: Hex, account: Hex, amount: bigint) => {
-  const publicWallet = createWalletClient({
-    chain: anvil,
-    transport: custom(window.ethereum),
-    account
-  })
+  const client = getPublicClient(account);
 
-  const data = await publicWallet.writeContract({
+  const { request } = await client.simulateContract({
     address: dscEngineAddress,
     abi: dscEngineABI,
     functionName: 'redeemCollateral',
     args: [tokenAddress, amount]
   })
 
-  return data
+  const txHash = await client.writeContract(request)
+  return txHash
 }
 
 export const mintDsc = async (account: Hex, amount: bigint) => {
-  const publicWallet = createWalletClient({
-    chain: anvil,
-    transport: custom(window.ethereum),
-    account
-  })
+  const client = getPublicClient(account);
 
-  const data = await publicWallet.writeContract({
+  const { request } = await client.simulateContract({
     address: dscEngineAddress,
     abi: dscEngineABI,
     functionName: 'mintDSC',
     args: [amount]
   })
 
-  return data
+  const txHash = await client.writeContract(request)
+
+  return txHash
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const listenToMint = async (account: Hex, callback: (data: any) => void) => {
+  const client = getPublicClient(account);
+
+  const unwatch = client.watchEvent({
+    onLogs: (logs) => {
+      callback(logs)
+    },
+    address: dscoinAddress,
+    event: parseAbiItem('event Transfer(address indexed from, address indexed to, uint256 value)'),
+    args: {
+      from: zeroAddress,
+      to: account
+    }
+  })
+
+  console.log('Registered listener for minting events')
+
+  return unwatch
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const listentToBurn = async (account: Hex, callback: (data: any) => void) => {
+  const client = getPublicClient(account);
+
+  const unwatch = client.watchEvent({
+    onLogs: (logs) => {
+      callback(logs)
+    },
+    address: dscEngineAddress,
+    event: parseAbiItem('event DSCBurned(address indexed from, uint256 value)'),
+    args: {
+      from: account
+    }
+  })
+
+  console.log('Registered listener for burning events')
+
+  return unwatch
 }
 
 export const burnDsc = async (account: Hex, amount: bigint) => {
-  const publicWallet = createWalletClient({
-    chain: anvil,
-    transport: custom(window.ethereum),
-    account
-  })
+  const client = getPublicClient(account);
 
-  const data = await publicWallet.writeContract({
+  const { request } = await client.simulateContract({
     address: dscEngineAddress,
     abi: dscEngineABI,
     functionName: 'burnDSC',
     args: [amount]
   })
 
-  return data
+  const txHash = await client.writeContract(request)
+
+  return txHash
 }
 
 export const getMaxMintableDsc = async (account: Hex) => {
-  const publicWallet = createWalletClient({
-    chain: anvil,
-    transport: custom(window.ethereum),
-    account
-  }).extend(publicActions);
+  const client = getPublicClient(account);
 
-  const data = await publicWallet.readContract({
+  const data = await client.readContract({
     address: dscEngineAddress,
     abi: dscEngineABI,
     functionName: 'getCollateralUSDValue',
