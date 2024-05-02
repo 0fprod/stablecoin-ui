@@ -1,15 +1,14 @@
-import './TokenGroups.css';
 import { Hex, parseEther } from 'viem';
-import React from 'react';
-import { Input, Button } from '@web3uikit/core';
-import { Archive, LogOut, Holders, Bin } from '@web3uikit/icons';
-import { DSCTokenAmountWithTooltip, TokenAmountWithTooltip } from '../TokenAmountWithTooltip/TokenAmountWithTooltip';
+import React, { useCallback, useEffect } from 'react';
 import { Token } from '../../../../constants/symbols';
 import { useDscEngine } from '../../../../hooks/useDscEngine';
 import { useTokenBalances } from '../../../../hooks/useTokenBalances';
 import { useNotificationHandlers } from '../../../../hooks/useNotificationHandlers';
 import { dscoinAddress, linkTokenAddress, wEthTokenAddress } from '../../../../constants/addresses';
 import { useStats } from '../../../../hooks/useStats';
+import { CollateralTokenGroup } from '../CollateralToken/CollateralToken';
+import '../../Balances.css';
+import StablecoinToken from '../StableCoinToken/StablecoinToken';
 
 interface TokenGroupsProps {
   account: Hex;
@@ -20,6 +19,7 @@ export const TokenGroups: React.FC<TokenGroupsProps> = ({ account }) => {
   const [linkAmount, setLinkAmount] = React.useState<bigint>(0n);
   const [wEthAmount, setWEthAmount] = React.useState<bigint>(0n);
   const [dscAmount, setDscAmount] = React.useState<bigint>(0n);
+  const [maxMintableDscoin, setMaxMintableDscoin] = React.useState<bigint>(0n);
   const {
     linkBalance,
     wEthBalance,
@@ -42,18 +42,22 @@ export const TokenGroups: React.FC<TokenGroupsProps> = ({ account }) => {
     burnDsc,
     registerMintListener,
     registerBurnListener,
+    getMaxMintableDsc,
   } = useDscEngine();
   const { fetchStats } = useStats();
   const { showTxCompleteNotification, showErrorNotification, showSubmittedTxNotification } = useNotificationHandlers();
 
-  const onChange = React.useCallback((token: Token, value: string) => {
+  const onChange = useCallback((token: Token, value: string) => {
     if (!value) return;
     if (token === Token.Link) setLinkAmount(parseEther(value));
     if (token === Token.wETH) setWEthAmount(parseEther(value));
-    if (token === Token.DSC) setDscAmount(parseEther(value));
+    if (token === Token.DSC) {
+      setDscAmount(parseEther(value));
+      setMaxMintableDscoin(0n);
+    }
   }, []);
 
-  const onApproveAndDeposit = React.useCallback(
+  const onApproveAndDeposit = useCallback(
     async (token: Token) => {
       const tokenAddress: Hex = token === Token.Link ? linkTokenAddress : wEthTokenAddress;
       const tokenAmount: bigint = token === Token.Link ? linkAmount : wEthAmount;
@@ -78,7 +82,7 @@ export const TokenGroups: React.FC<TokenGroupsProps> = ({ account }) => {
     ]
   );
 
-  const onRedeem = React.useCallback(
+  const onRedeem = useCallback(
     async (token: Token) => {
       const tokenAddress: Hex = token === Token.Link ? linkTokenAddress : wEthTokenAddress;
       const tokenAmount: bigint = token === Token.Link ? linkAmount : wEthAmount;
@@ -103,15 +107,24 @@ export const TokenGroups: React.FC<TokenGroupsProps> = ({ account }) => {
     ]
   );
 
-  const onMint = React.useCallback(() => {
+  const onMint = useCallback(() => {
     mintDsc(account, dscAmount).then(showSubmittedTxNotification).catch(showErrorNotification);
   }, [mintDsc, dscAmount, account, showSubmittedTxNotification, showErrorNotification]);
 
-  const onBurn = React.useCallback(() => {
+  const onBurn = useCallback(() => {
     burnDsc(account, dscAmount).then(showSubmittedTxNotification).catch(showErrorNotification);
   }, [burnDsc, dscAmount, account, showSubmittedTxNotification, showErrorNotification]);
 
-  React.useEffect(() => {
+  const setMax = useCallback(() => {
+    getMaxMintableDsc(account)
+      .then((max) => {
+        setMaxMintableDscoin(max);
+        setDscAmount(max);
+      })
+      .catch(showErrorNotification);
+  }, [account, getMaxMintableDsc, showErrorNotification]);
+
+  useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     registerMintListener(account, async (_data) => {
       showTxCompleteNotification();
@@ -131,7 +144,7 @@ export const TokenGroups: React.FC<TokenGroupsProps> = ({ account }) => {
   return (
     <div className="balances">
       {tokens.map((token) => (
-        <TokenGroupLegacy
+        <CollateralTokenGroup
           key={token}
           asCollateral={token === Token.Link ? linkCollateralBalance : wEthCollateralBalance}
           inWallet={token === Token.Link ? linkBalance : wEthBalance}
@@ -144,87 +157,16 @@ export const TokenGroups: React.FC<TokenGroupsProps> = ({ account }) => {
           onRedeem={onRedeem}
         />
       ))}
-      <div className="group">
-        <DSCTokenAmountWithTooltip
-          inWallet={dscBalance}
-          isLoadingWalletBalances={isLoadingDscBalance}
-          tokenSymbol={Token.DSC}
-        />
-        <div className="center">
-          <Input type="number" onChange={(e) => onChange(Token.DSC, e.target.value)} />
-        </div>
-        <div className="actions">
-          <Button
-            icon={<Holders fontSize="1rem" />}
-            text="Mint"
-            theme="moneyPrimary"
-            onClick={() => onMint()}
-            disabled={isLoadingDscBalance || isActionRunning}
-          />
-          <Button
-            icon={<Bin fontSize="1rem" />}
-            text="Burn"
-            color="red"
-            theme="colored"
-            onClick={() => onBurn()}
-            disabled={isLoadingDscBalance || isActionRunning}
-          />
-        </div>
-      </div>
+      <StablecoinToken
+        dscBalance={dscBalance}
+        isLoadingDscBalance={isLoadingDscBalance}
+        onChange={onChange}
+        onMint={onMint}
+        onBurn={onBurn}
+        setMax={setMax}
+        isActionRunning={isActionRunning}
+        value={maxMintableDscoin}
+      />
     </div>
   );
 };
-
-interface TokenGroupProps {
-  asCollateral: bigint;
-  inWallet: bigint;
-  token: Token;
-  isLoadingCollateral: boolean;
-  isLoadingWalletBalances: boolean;
-  shouldDisableActions: boolean;
-  onChange: (token: Token, value: string) => void;
-  onApproveAndDeposit: (token: Token) => Promise<void>;
-  onRedeem: (token: Token) => Promise<void>;
-}
-
-const TokenGroupLegacy: React.FC<TokenGroupProps> = ({
-  asCollateral,
-  inWallet,
-  token,
-  isLoadingCollateral,
-  isLoadingWalletBalances,
-  shouldDisableActions,
-  onChange,
-  onApproveAndDeposit,
-  onRedeem,
-}) => (
-  <div className="group">
-    <TokenAmountWithTooltip
-      isLoadingCollateral={isLoadingCollateral}
-      isLoadingWalletBalances={isLoadingWalletBalances}
-      asCollateral={asCollateral}
-      inWallet={inWallet}
-      tokenSymbol={token}
-    />
-    <div className="center">
-      <Input type="number" onChange={(e) => onChange(token, e.target.value)} />
-    </div>
-    <div className="actions">
-      <Button
-        icon={<Archive fontSize="1rem" />}
-        text="Aprove and deposit"
-        theme="moneyPrimary"
-        onClick={() => onApproveAndDeposit(token)}
-        disabled={shouldDisableActions}
-      />
-      <Button
-        icon={<LogOut fontSize="1rem" />}
-        text="Redeem"
-        color="red"
-        theme="colored"
-        onClick={() => onRedeem(token)}
-        disabled={shouldDisableActions}
-      />
-    </div>
-  </div>
-);

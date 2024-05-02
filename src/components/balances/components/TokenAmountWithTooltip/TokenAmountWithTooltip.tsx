@@ -2,7 +2,7 @@ import { Tooltip, Loading } from '@web3uikit/core';
 import { LockClosed, Wallet } from '@web3uikit/icons';
 import { formatUnits } from 'viem';
 import { Token } from '../../../../constants/symbols';
-
+import '../../Balances.css';
 interface AmountWithToolTipProps {
   asCollateral: bigint;
   inWallet: bigint;
