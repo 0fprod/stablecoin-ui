@@ -1,0 +1,13 @@
+.tooltip-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  color: black !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .tooltip-content {
+    color: white !important;
+  }
+}
