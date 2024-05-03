@@ -8,7 +8,8 @@ import {
   redeemCollateral,
   getMaxMintableDsc,
   listenToMint,
-  listentToBurn
+  listentToBurn,
+  getHealthFactor,
 } from '../api/walletActions';
 import { Hex } from 'viem';
 
@@ -45,5 +46,6 @@ export const useDscEngine = () => {
     burnDsc: (account: Hex, amount: bigint) => wrapAction(() => burnDsc(account, amount)),
     registerMintListener,
     registerBurnListener,
+    getHealthFactor: (account: Hex) => wrapAction(() => getHealthFactor(account)),
   };
 };

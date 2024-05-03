@@ -1,49 +1,81 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import './Collateralized.css';
 import { Button, Table, Tag } from '@web3uikit/core';
 import { Blockie } from '@web3uikit/web3';
-import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { MagicWand } from '@web3uikit/icons';
-
-const trimAddress = (address: string): string => {
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
-};
-
-const generateRandomAccounts = (): string[] => {
-  const accounts: string[] = [];
-  for (let i = 0; i < 3; i++) {
-    const key = generatePrivateKey();
-    const account = privateKeyToAccount(key);
-    accounts.push(trimAddress(account.address.toLowerCase()));
-  }
-
-  return accounts;
-};
+import { useQuery } from '@tanstack/react-query';
+import { useAccount } from 'wagmi';
+import { useDscEngine } from '../../hooks/useDscEngine';
+import { fetchHolders } from '../../graphql/fetchHolders';
+import { Hex } from 'viem';
+import { DomainHolder, mapFromGqlHolderToDomainHolder } from '../models/Holder';
 
 export const Collateralized: React.FC = () => {
-  const randomAccounts = generateRandomAccounts();
-  const holdersData = [
-    {
-      walletAddress: randomAccounts[0],
-      healthFactor: 1,
-      liquidateEnabled: true,
-    },
-    {
-      walletAddress: randomAccounts[1],
-      healthFactor: 0.5,
-      liquidateEnabled: true,
-    },
-    {
-      walletAddress: randomAccounts[2],
-      healthFactor: 2,
-      liquidateEnabled: false,
-    },
-  ];
+  const { address } = useAccount();
+  const { data, isLoading, isError } = useQuery({
+    queryKey: [address],
+    queryFn: () => fetchHolders(address as Hex),
+  });
+  const { getHealthFactor } = useDscEngine();
+  const [holdersData, setHoldersData] = React.useState<DomainHolder[]>([]);
+  const prevData = useRef(data);
+  const prevHolderData = useRef(holdersData);
 
-  // create a functoin that returns 'green' if healthFactor is greater than 1, otherwise 'red'
-  const getHealthFactorColor = (healthFactor: number): 'green' | 'red' => {
-    return healthFactor > 1 ? 'green' : 'red';
+  const getHealthFactorColor = (_holder: DomainHolder): 'green' | 'red' | 'yellow' => {
+    if (_holder.healthFactor > 15) {
+      return 'green';
+    } else if (_holder.healthFactor < 1) {
+      return 'red';
+    }
+
+    return 'yellow';
   };
+
+  useEffect(() => {
+    if (data && data != prevData.current && address) {
+      const mappedData = data.map(mapFromGqlHolderToDomainHolder);
+      setHoldersData(mappedData);
+      prevData.current = data;
+    }
+  }, [data, address, getHealthFactor]);
+
+  useEffect(() => {
+    if (address && holdersData.length && holdersData != prevHolderData.current) {
+      const fetchHealthFactor = async () => {
+        const promises = holdersData.map(async (holder) => {
+          const healthFactor = await getHealthFactor(holder.walletAddress as Hex);
+          return { ...holder, healthFactor };
+        });
+        const results = await Promise.allSettled(promises);
+        const updatedHoldersData = results.map((result, index) => {
+          if (result.status === 'fulfilled') {
+            return result.value;
+          } else {
+            console.error(`Failed to fetch health factor for holder at index ${index}`);
+            return holdersData[index];
+          }
+        });
+        const holdersWithHf = updatedHoldersData.map((holder) => {
+          return {
+            ...holder,
+            healthFactor: Number(holder.healthFactor) / 10 ** 18,
+          };
+        });
+        setHoldersData(holdersWithHf);
+        prevHolderData.current = holdersWithHf;
+      };
+      fetchHealthFactor();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address, holdersData]);
+
+  if (isLoading || !data) {
+    return <div>Loading...</div>;
+  }
+
+  if (isError) {
+    return <div>Error...</div>;
+  }
 
   return (
     <section className="holders">
@@ -53,15 +85,10 @@ export const Collateralized: React.FC = () => {
         data={holdersData.map((holder) => [
           <Blockie seed={holder.walletAddress} />,
           <span style={{ margin: 'auto 0' }}>{holder.walletAddress}</span>,
-          <Tag color={getHealthFactorColor(holder.healthFactor)} text={holder.healthFactor.toString()} />,
-          <Button
-            icon={<MagicWand fontSize="1rem" />}
-            disabled={!holder.liquidateEnabled}
-            text="Woosh!"
-            theme="secondary"
-          />,
+          <Tag color={getHealthFactorColor(holder)} text={holder.healthFactor.toFixed(2)} />,
+          <Button icon={<MagicWand fontSize="1rem" />} disabled={false} text="Woosh!" theme="secondary" />,
         ])}
-        header={['', 'Wallet Address', 'Health Factor', 'Liquidatable']}
+        header={['', 'Wallet Address', 'Health Factor', 'Liquidate!']}
         maxPages={1}
         noPagination
         onPageNumberChanged={() => {}}

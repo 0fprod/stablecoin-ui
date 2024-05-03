@@ -1,4 +1,4 @@
-import { Hex, createWalletClient, custom, parseAbiItem, publicActions, zeroAddress } from "viem"
+import { Hex, createWalletClient, custom, parseAbiItem, publicActions } from "viem"
 import { anvil } from "viem/chains"
 import { erc20Abi } from "../constants/erc20.abi"
 import { dscEngineABI } from "../constants/dscengine.abi"
@@ -105,10 +105,9 @@ export const listenToMint = async (account: Hex, callback: (data: any) => void) 
       callback(logs)
     },
     address: dscoinAddress,
-    event: parseAbiItem('event Transfer(address indexed from, address indexed to, uint256 value)'),
+    event: parseAbiItem('event DSCMinted(address indexed minter, uint256 value)'),
     args: {
-      from: zeroAddress,
-      to: account
+      minter: account
     }
   })
 
@@ -126,9 +125,9 @@ export const listentToBurn = async (account: Hex, callback: (data: any) => void)
       callback(logs)
     },
     address: dscEngineAddress,
-    event: parseAbiItem('event DSCBurned(address indexed from, uint256 value)'),
+    event: parseAbiItem('event DSCBurned(address indexed burner, uint256 value)'),
     args: {
-      from: account
+      burner: account
     }
   })
 
@@ -163,4 +162,17 @@ export const getMaxMintableDsc = async (account: Hex) => {
   })
 
   return data / 2n
+}
+
+export const getHealthFactor = async (account: Hex) => {
+  const client = getPublicClient(account);
+
+  const data = await client.readContract({
+    address: dscEngineAddress,
+    abi: dscEngineABI,
+    functionName: 'getHealthFactor',
+    args: [account]
+  })
+
+  return data
 }
