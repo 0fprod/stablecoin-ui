@@ -9,6 +9,7 @@ import { useDscEngine } from '../../hooks/useDscEngine';
 import { fetchHolders } from '../../graphql/fetchHolders';
 import { Hex } from 'viem';
 import { DomainHolder, mapFromGqlHolderToDomainHolder } from '../models/Holder';
+import { LiquidateModal } from './modal/liquidate';
 
 export const Collateralized: React.FC = () => {
   const { address } = useAccount();
@@ -20,6 +21,8 @@ export const Collateralized: React.FC = () => {
   const [holdersData, setHoldersData] = React.useState<DomainHolder[]>([]);
   const prevData = useRef(data);
   const prevHolderData = useRef(holdersData);
+  const [showModal, setShowModal] = React.useState<boolean>(false);
+  const [insolventUserToLiquidate, setInsolventUserToLiquidate] = React.useState<string>('');
 
   const getHealthFactorColor = (_holder: DomainHolder): 'green' | 'red' | 'yellow' => {
     if (_holder.healthFactor > 15) {
@@ -69,6 +72,16 @@ export const Collateralized: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address, holdersData]);
 
+  const onLiquidate = (insolvetUser: string) => {
+    setInsolventUserToLiquidate(insolvetUser);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setInsolventUserToLiquidate('');
+  };
+
   if (isLoading || !data) {
     return <div>Loading...</div>;
   }
@@ -86,7 +99,15 @@ export const Collateralized: React.FC = () => {
           <Blockie seed={holder.walletAddress} />,
           <span style={{ margin: 'auto 0' }}>{holder.walletAddress}</span>,
           <Tag color={getHealthFactorColor(holder)} text={holder.healthFactor.toFixed(2)} />,
-          <Button icon={<MagicWand fontSize="1rem" />} disabled={false} text="Woosh!" theme="secondary" />,
+          <Button
+            icon={<MagicWand fontSize="1rem" />}
+            disabled={false}
+            text="Woosh!"
+            theme="secondary"
+            onClick={() => {
+              onLiquidate(holder.walletAddress);
+            }}
+          />,
         ])}
         header={['', 'Wallet Address', 'Health Factor', 'Liquidate!']}
         maxPages={1}
@@ -94,6 +115,11 @@ export const Collateralized: React.FC = () => {
         onPageNumberChanged={() => {}}
         onRowClick={() => {}}
         pageSize={holdersData.length}
+      />
+      <LiquidateModal
+        isVisible={showModal}
+        closeModal={closeModal}
+        insolventUserToLiquidate={insolventUserToLiquidate as Hex}
       />
     </section>
   );

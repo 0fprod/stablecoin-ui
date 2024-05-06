@@ -8,6 +8,6 @@ export interface DomainHolder {
 export function mapFromGqlHolderToDomainHolder(gqlHolder: GqlHolder): DomainHolder {
   return {
     walletAddress: gqlHolder.user.toLowerCase(),
-    healthFactor: 0,
+    healthFactor: 0
   };
 }

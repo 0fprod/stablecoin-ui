@@ -10,6 +10,7 @@ import {
   listenToMint,
   listentToBurn,
   getHealthFactor,
+  liquidate,
 } from '../api/walletActions';
 import { Hex } from 'viem';
 
@@ -47,5 +48,6 @@ export const useDscEngine = () => {
     registerMintListener,
     registerBurnListener,
     getHealthFactor: (account: Hex) => wrapAction(() => getHealthFactor(account)),
+    liquidate: (insolventUser: Hex, collateralAddress: Hex, dscToBurn: bigint) => wrapAction(() => liquidate(insolventUser, collateralAddress, dscToBurn)),
   };
 };

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Token } from '../../../../constants/symbols';
 import { Input, Button } from '@web3uikit/core';
-import { Holders, Bin, Tokens } from '@web3uikit/icons';
+import { Holders, Bin } from '@web3uikit/icons';
 import { DSCTokenAmountWithTooltip } from '../TokenAmountWithTooltip/TokenAmountWithTooltip';
 import '../../Balances.css';
 import { formatUnits } from 'viem';
@@ -12,7 +12,6 @@ interface StablecoinTokenProps {
   onChange: (token: Token, value: string) => void;
   onMint: () => void;
   onBurn: () => void;
-  setMax: () => void;
   isActionRunning: boolean;
   value: bigint;
 }
@@ -23,7 +22,6 @@ const StablecoinToken: React.FC<StablecoinTokenProps> = ({
   onChange,
   onMint,
   onBurn,
-  setMax,
   isActionRunning,
   value,
 }) => {
@@ -42,13 +40,6 @@ const StablecoinToken: React.FC<StablecoinTokenProps> = ({
         />
       </div>
       <div className="actions">
-        <Button
-          icon={<Tokens fontSize="1rem" />}
-          text="Max"
-          theme="outline"
-          onClick={() => setMax()}
-          disabled={isLoadingDscBalance || isActionRunning}
-        />
         <Button
           icon={<Holders fontSize="1rem" />}
           text="Mint"

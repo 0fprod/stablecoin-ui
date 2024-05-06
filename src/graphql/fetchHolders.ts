@@ -5,7 +5,7 @@ import { Hex } from "viem";
 
 export const fetchHolders = async (address: Hex) => {
   const response = await request<{ dscholders_collection: Array<GqlHolder> }>(
-    'http://localhost:8000/subgraphs/name/stablecoin-protocol-graph/',
+    'https://api.studio.thegraph.com/query/36860/stablecoin-protocol-graph/version/latest',
     GET_HOLDERS
   );
 

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Hex } from "viem";
 import { linkTokenAddress, wEthTokenAddress, dscoinAddress } from "../constants/addresses";
 import { fetchTokenBalance } from "../api/walletActions";
-import { fetchCollateralizedTokenBalance } from "../api/fetchCollateralizedTokenBalances";
+import { fetchCollateralizedTokenBalance, getCollateralValueInUsd } from "../api/fetchCollateralizedTokenBalances";
 
 export const useTokenBalances = (account: Hex) => {
   // Token balances
@@ -90,6 +90,7 @@ export const useTokenBalances = (account: Hex) => {
     refreshAllWalletBalances,
     refreshAllCollateralBalances,
     updateTokenBalance,
-    updateCollateralBalance
+    updateCollateralBalance,
+    getCollateralValueInUsd
   };
 };

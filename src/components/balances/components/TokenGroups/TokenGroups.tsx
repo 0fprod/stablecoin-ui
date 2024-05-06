@@ -42,7 +42,6 @@ export const TokenGroups: React.FC<TokenGroupsProps> = ({ account }) => {
     burnDsc,
     registerMintListener,
     registerBurnListener,
-    getMaxMintableDsc,
   } = useDscEngine();
   const { fetchStats } = useStats();
   const { showTxCompleteNotification, showErrorNotification, showSubmittedTxNotification } = useNotificationHandlers();
@@ -115,15 +114,6 @@ export const TokenGroups: React.FC<TokenGroupsProps> = ({ account }) => {
     burnDsc(account, dscAmount).then(showSubmittedTxNotification).catch(showErrorNotification);
   }, [burnDsc, dscAmount, account, showSubmittedTxNotification, showErrorNotification]);
 
-  const setMax = useCallback(() => {
-    getMaxMintableDsc(account)
-      .then((max) => {
-        setMaxMintableDscoin(max);
-        setDscAmount(max);
-      })
-      .catch(showErrorNotification);
-  }, [account, getMaxMintableDsc, showErrorNotification]);
-
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     registerMintListener(account, async (_data) => {
@@ -163,7 +153,6 @@ export const TokenGroups: React.FC<TokenGroupsProps> = ({ account }) => {
         onChange={onChange}
         onMint={onMint}
         onBurn={onBurn}
-        setMax={setMax}
         isActionRunning={isActionRunning}
         value={maxMintableDscoin}
       />

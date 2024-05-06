@@ -1,12 +1,12 @@
 import { Hex, createWalletClient, custom, parseAbiItem, publicActions } from "viem"
-import { anvil } from "viem/chains"
+import { sepolia } from "viem/chains"
 import { erc20Abi } from "../constants/erc20.abi"
 import { dscEngineABI } from "../constants/dscengine.abi"
 import { dscEngineAddress, dscoinAddress } from "../constants/addresses"
 
 function getPublicClient(account: Hex) {
   return createWalletClient({
-    chain: anvil,
+    chain: sepolia,
     transport: custom(window.ethereum),
     account
   }).extend(publicActions);
@@ -175,4 +175,19 @@ export const getHealthFactor = async (account: Hex) => {
   })
 
   return data
+}
+
+export const liquidate = async (insolventUser: Hex, collateralToTake: Hex, dscToBurn: bigint) => {
+  const client = getPublicClient(insolventUser);
+
+  const { request } = await client.simulateContract({
+    address: dscEngineAddress,
+    abi: dscEngineABI,
+    functionName: 'liquidate',
+    args: [insolventUser, collateralToTake, dscToBurn]
+  })
+
+  const txHash = await client.writeContract(request)
+
+  return txHash
 }
