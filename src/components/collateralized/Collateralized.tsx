@@ -82,6 +82,10 @@ export const Collateralized: React.FC = () => {
     setInsolventUserToLiquidate('');
   };
 
+  if (!address) {
+    return <div>Connect your wallet to see the collateralized holders</div>;
+  }
+
   if (isLoading || !data) {
     return <div>Loading...</div>;
   }
