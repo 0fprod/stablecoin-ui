@@ -15,7 +15,6 @@
 
 body {
   height: 100vh;
-  overflow: hidden;
 }
 
 @media (prefers-color-scheme: light) {

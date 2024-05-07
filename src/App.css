@@ -3,7 +3,7 @@
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
-  height: 100vh;
+  height: 100%;
 }
 
 main {
@@ -12,8 +12,6 @@ main {
   justify-content: flex-start;
   gap: 1.5rem;
   align-items: center;
-  height: 100vh;
-  overflow-y: scroll;
   flex-direction: column;
 }
 
