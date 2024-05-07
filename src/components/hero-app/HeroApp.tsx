@@ -12,7 +12,7 @@ export const HeroApp = () => {
         title="Decentralized Algorithmic Stablecoin"
         subTitle="Pegged to 1 USD ;)"
         customImage={{
-          url: '../src/assets/crypto2.png',
+          url: '/dsclogo.png',
         }}
       />
       <Typography monospace={true}>

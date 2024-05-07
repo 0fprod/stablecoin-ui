@@ -111,8 +111,6 @@ export const listenToMint = async (account: Hex, callback: (data: any) => void) 
     }
   })
 
-  console.log('Registered listener for minting events')
-
   return unwatch
 };
 
@@ -130,8 +128,6 @@ export const listentToBurn = async (account: Hex, callback: (data: any) => void)
       burner: account
     }
   })
-
-  console.log('Registered listener for burning events')
 
   return unwatch
 }

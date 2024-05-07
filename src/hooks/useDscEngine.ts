@@ -23,15 +23,12 @@ export const useDscEngine = () => {
       .finally(() => setIsActionRunning(false));
   };
 
-  // wrap listenToMint in useCallback. This should be called once when the hook is registered
   const registerMintListener = useCallback(async (account: Hex, callback: (data: any) => void) => {
-    console.log('Registering mint listener')
     const unregister = await listenToMint(account, callback);
     return () => unregister();
   }, []);
 
   const registerBurnListener = useCallback(async (account: Hex, callback: (data: any) => void) => {
-    console.log('Registering burn listener')
     const unregister = await listentToBurn(account, callback);
     return () => unregister();
   }, []);
